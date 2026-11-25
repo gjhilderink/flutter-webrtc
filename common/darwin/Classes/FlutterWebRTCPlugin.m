@@ -293,8 +293,13 @@ static FlutterWebRTCPlugin *sharedSingleton;
         VideoEncoderFactorySimulcast* simulcastFactory =
             [[VideoEncoderFactorySimulcast alloc] initWithPrimary:encoderFactory fallback:encoderFactory];
 
+        // Nubix: de AudioUnit-ADM (VoiceProcessingIO) in plaats van de
+        // AVAudioEngine-ADM. Die laatste roept bij elke start van de opname
+        // -[AVAudioIONode setVoiceProcessingEnabled:] aan, en dat beschadigt
+        // op iOS 26+ geheugen (use-after-free in AVFAudio): de app crasht
+        // seconden later in dart::OSThread::~OSThread (flutter/flutter#193852).
         _peerConnectionFactory =
-            [[RTCPeerConnectionFactory alloc] initWithAudioDeviceModuleType:RTCAudioDeviceModuleTypeAudioEngine
+            [[RTCPeerConnectionFactory alloc] initWithAudioDeviceModuleType:RTCAudioDeviceModuleTypePlatformDefault
                                                       bypassVoiceProcessing:bypassVoiceProcessing
                                                              encoderFactory:simulcastFactory
                                                              decoderFactory:decoderFactory
